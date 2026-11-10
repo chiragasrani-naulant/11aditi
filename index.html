@@ -67,8 +67,8 @@
   .gal{max-width:540px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 64px) 24px calc(env(safe-area-inset-bottom) + 90px);display:flex;flex-direction:column}
   .gal-head{margin-bottom:56px}
   .gal-head h2{font-weight:700;font-size:clamp(2.6rem,11vw,4rem);line-height:.98}
-  .polaroid{width:min(80%,310px);background:#fbf7ec;padding:12px 12px 16px;box-shadow:5px 7px 0 rgba(0,0,0,.35);margin-bottom:66px;position:relative;opacity:0;transform:rotate(var(--r)) translateY(46px);transition:opacity .9s,transform .9s cubic-bezier(.2,.7,.3,1)}
-  .polaroid.in{opacity:1;transform:rotate(var(--r))}
+  .polaroid{width:min(80%,310px);background:#fbf7ec;padding:12px 12px 16px;box-shadow:5px 7px 0 rgba(0,0,0,.35);margin-bottom:66px;position:relative;opacity:0;transform:rotate(calc(var(--r) * 3)) translateY(-70px) scale(1.12);transition:opacity .7s,transform 1s cubic-bezier(.2,.9,.3,1.15)}
+  .polaroid.in{opacity:1;transform:rotate(var(--r)) translateY(0) scale(1)}
   .polaroid:nth-of-type(odd){align-self:flex-start} .polaroid:nth-of-type(even){align-self:flex-end}
   .polaroid::before{content:"";position:absolute;top:-13px;left:50%;width:84px;height:26px;margin-left:-42px;background:rgba(244,162,97,.6);transform:rotate(-4deg)}
   .polaroid:nth-of-type(even)::before{transform:rotate(4deg)}
@@ -79,6 +79,22 @@
   .tap{position:fixed;z-index:3;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 26px);text-align:center;font-family:'Special Elite',monospace;font-size:1rem;letter-spacing:.06em;color:var(--cream);opacity:0;transition:opacity .5s;pointer-events:none}
   .tap.in{opacity:.8;animation:nudge 1.6s ease-in-out infinite}
   @keyframes nudge{50%{transform:translateY(-5px)}}
+  #catch{position:fixed;inset:0;z-index:6;pointer-events:none} #catch[hidden]{display:none}
+  #cstar{position:absolute;left:50%;top:44%;width:150px;height:150px;margin:-75px 0 0 -75px;pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:pointer;opacity:0}
+  #cstar:focus-visible{outline:2px solid var(--peach);border-radius:50%}
+  .core{position:absolute;inset:0;display:grid;place-items:center}
+  #cstar.arrived .core{animation:bob 2.6s ease-in-out infinite}
+  @keyframes bob{50%{transform:translateY(-7px) rotate(8deg)}}
+  .sparkle{width:92px;height:92px;fill:var(--cream);scale:calc(1 + var(--p,0)*.7);filter:drop-shadow(0 0 calc(6px + var(--p,0)*24px) rgba(255,236,190,calc(.35 + var(--p,0)*.55)))}
+  .ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);fill:none;stroke:var(--peach);stroke-width:3;stroke-linecap:round}
+  .trail{position:absolute;left:50%;top:50%;width:260px;height:3px;transform-origin:0 50%;background:linear-gradient(to right,rgba(243,234,214,.95),rgba(243,234,214,0));pointer-events:none}
+  #chint{position:absolute;left:0;right:0;top:calc(44% + 98px);text-align:center;font-family:'Special Elite',monospace;font-size:1rem;letter-spacing:.05em;opacity:0;transition:opacity .6s;pointer-events:none}
+  #chint.in{opacity:.85}
+  #mute{position:fixed;z-index:6;top:calc(env(safe-area-inset-top) + 14px);right:16px;width:42px;height:42px;padding:0;border-radius:50%;display:grid;place-items:center;transform:none;box-shadow:2px 3px 0 rgba(0,0,0,.4)}
+  #mute:hover{transform:translate(1px,2px);box-shadow:1px 1px 0 rgba(0,0,0,.4)}
+  #mute svg{width:20px;height:20px;fill:var(--ink)}
+  #mute[hidden]{display:none}
+  #flash{position:fixed;inset:0;z-index:8;background:#fffdf4;opacity:0;pointer-events:none}
   @media(max-width:560px){.d1{opacity:.3}}
 </style>
 </head>
@@ -121,6 +137,20 @@
   </section>
 </main>
 
+<div id="catch" hidden>
+  <div id="cstar" role="button" tabindex="0" aria-label="Hold to catch the star">
+    <div class="trail"></div>
+    <svg class="ring" viewBox="0 0 140 140" aria-hidden="true"><circle id="cring" cx="70" cy="70" r="62"/></svg>
+    <div class="core"><svg class="sparkle" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 4 C53 36,64 47,96 50 C64 53,53 64,50 96 C47 64,36 53,4 50 C36 47,47 36,50 4 Z"/></svg></div>
+  </div>
+  <p id="chint">hold the star to catch it</p>
+</div>
+<div id="flash" aria-hidden="true"></div>
+<audio id="song" src="song.mp3" loop preload="none"></audio>
+<button id="mute" type="button" hidden aria-label="Pause music">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><g id="icPause"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></g><path id="icPlay" d="M8 5 L19 12 L8 19 Z" style="display:none"/></svg>
+</button>
+
 <section id="gallery" hidden aria-label="A little surprise">
   <div class="gal">
     <header class="gal-head"><p class="tiny">okay, one more thing</p><h2>A few of my favourites.</h2><p class="lead">Scroll slowly. I picked these myself.</p></header>
@@ -147,12 +177,14 @@ const WA_TEXT = "Yes. Let's go on that date :)";
 const STANZAS = [
   "I tried writing this about nine different ways.\nAll of them sounded weird, so here's the star version.",
   "They say if you catch a falling star,\nyou get to wish for anything.",
+  "You caught it.\nThat means you get a wish,\nbut I'm going to borrow it for a minute.",
   "I figured I'd wish for something huge.\nTurns out mine is tiny.",
   "No label. No big word.\nJust one evening with you.",
   "We both know we're not ready for anything bigger,\nand I'm not asking for that.",
   "Ask me about the big stuff in ten years.\nIf we both still want to.",
   "So for today, it's only this.\nAditi, will you accept my proposal for a date?"
 ];
+const CATCH_AFTER = 1;  // the star appears after this line (0 = first line)
 /* ======================== */
 
 const $ = id => document.getElementById(id);
@@ -227,6 +259,72 @@ async function hide(el){ el.classList.remove('in'); await sleep(800); el.hidden 
 
 show($('intro'));
 
+/* ---------- catch the star ---------- */
+let ac;
+function ensureAudio(){ try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (e) {} }
+function playWish(){
+  try {
+    ensureAudio(); if (!ac) return;
+    const t0 = ac.currentTime + .03, master = ac.createGain(); master.gain.value = .55; master.connect(ac.destination);
+    const dl = ac.createDelay(); dl.delayTime.value = .24; const fb = ac.createGain(); fb.gain.value = .4;
+    const wet = ac.createGain(); wet.gain.value = .5; dl.connect(fb); fb.connect(dl); dl.connect(wet); wet.connect(master);
+    const note = (f, t, dur, vol) => {
+      [[f, vol, 'sine'], [f * 2, vol * .25, 'triangle']].forEach(([fr, v, type]) => {
+        const o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.value = fr;
+        g.gain.setValueAtTime(0, t0 + t); g.gain.linearRampToValueAtTime(v, t0 + t + .015);
+        g.gain.exponentialRampToValueAtTime(.0001, t0 + t + dur);
+        o.connect(g); g.connect(master); g.connect(dl); o.start(t0 + t); o.stop(t0 + t + dur + .05);
+      });
+    };
+    [523.25, 659.25, 783.99, 1046.5, 1318.5, 1568].forEach((f, i) => note(f, i * .13, 1.3, .2));  /* da da da da da da */
+    [1046.5, 1318.5, 1568, 2093].forEach(f => note(f, .95, 3.4, .13));
+    [261.63, 523.25].forEach(f => note(f, .95, 3.6, .17));
+  } catch (e) {}
+}
+
+async function catchStar(){
+  const box = $('catch'), star = $('cstar'), ring = $('cring'), hint = $('chint'), trail = star.querySelector('.trail');
+  const C = 2 * Math.PI * 62, HOLD = 1500;
+  ring.style.strokeDasharray = C; ring.style.strokeDashoffset = C;
+  box.hidden = false; star.style.opacity = 1;
+  const sx = innerWidth * .38, sy = -innerHeight * .5;
+  trail.style.transform = `rotate(${Math.atan2(sy, sx)}rad)`;
+  const fall = star.animate([
+    { transform: `translate(${sx}px,${sy}px) scale(.5)`, opacity: 0 },
+    { opacity: 1, offset: .15 },
+    { transform: 'translate(0,0) scale(1)', opacity: 1 }
+  ], { duration: 2400, easing: 'cubic-bezier(.2,.65,.3,1)', fill: 'forwards' });
+  trail.animate([{ opacity: 1 }, { opacity: 1, offset: .6 }, { opacity: 0 }], { duration: 2400, fill: 'forwards' });
+  await fall.finished;
+  star.classList.add('arrived'); hint.classList.add('in');
+
+  await new Promise(done => {
+    let holding = false, p = 0, start = 0, raf = 0;
+    const tick = now => {
+      raf = 0;
+      p = holding ? Math.min((now - start) / HOLD, 1) : Math.max(p - .03, 0);
+      ring.style.strokeDashoffset = C * (1 - p); star.style.setProperty('--p', p);
+      if (p >= 1) { holding = false; done(); return; }
+      if (holding || p > 0) raf = requestAnimationFrame(tick);
+    };
+    const begin = () => { if (holding) return; ensureAudio(); holding = true; start = performance.now() - p * HOLD; hint.textContent = 'keep holding...'; if (!raf) raf = requestAnimationFrame(tick); };
+    const end = () => { if (!holding) return; holding = false; hint.textContent = 'hold the star to catch it'; if (!raf) raf = requestAnimationFrame(tick); };
+    star.addEventListener('pointerdown', e => { e.preventDefault(); try { star.setPointerCapture(e.pointerId); } catch (x) {} begin(); });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => star.addEventListener(ev, end));
+    star.addEventListener('contextmenu', e => e.preventDefault());
+    star.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); begin(); } });
+    star.addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') end(); });
+  });
+
+  hint.classList.remove('in');
+  if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+  playWish();
+  star.animate([{ transform: 'translate(0,0) scale(1)', opacity: 1 }, { transform: 'translate(0,0) scale(7)', opacity: 0 }], { duration: 1100, easing: 'ease-in', fill: 'forwards' });
+  $('flash').animate([{ opacity: 0 }, { opacity: reduce ? .55 : 1, offset: .3 }, { opacity: reduce ? .55 : 1, offset: .58 }, { opacity: 0 }], { duration: 3800, easing: 'ease-in-out' });
+  await sleep(3200);
+  star.getAnimations().forEach(a => a.cancel()); star.style.opacity = 0; box.hidden = true;
+}
+
 $('wish').addEventListener('click', async () => {
   await hide($('intro'));
   shoot();
@@ -238,6 +336,14 @@ $('wish').addEventListener('click', async () => {
     line.classList.toggle('final', final);
     await typeText(line, STANZAS[i]);
     if (final) break;
+    if (i === CATCH_AFTER) {
+      await wait(1900);
+      line.style.opacity = 0; await sleep(700);
+      line.textContent = '';
+      await catchStar();
+      line.style.opacity = 1;
+      continue;
+    }
     $('tap').classList.add('in'); await waitTap(); $('tap').classList.remove('in');
     line.style.opacity = 0; await sleep(700);
     line.textContent = ''; line.style.opacity = 1;
@@ -248,14 +354,36 @@ $('wish').addEventListener('click', async () => {
 });
 
 $('surprise').addEventListener('click', async () => {
+  const song = $('song'); song.volume = 0;
+  song.play().then(() => {
+    $('mute').hidden = false; let v = 0;
+    const f = setInterval(() => { v = Math.min(v + .05, .85); song.volume = v; if (v >= .85) clearInterval(f); }, 150);
+  }).catch(() => {});   /* no song.mp3 in the repo? then it just stays silent */
   await hide($('win'));
   document.querySelector('.stamp').style.display = 'none';
   const gal = $('gallery');
   gal.hidden = false; gal.scrollTop = 0; gal.offsetWidth; gal.classList.add('in');
   shoot();
-  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { root: gal, threshold: .2 });
-  gal.querySelectorAll('.polaroid,.gal-end').forEach(el => io.observe(el));
+  gal.style.overflowY = 'hidden';   /* locked while the photos arrive */
+  await sleep(2600);
+  for (const el of gal.querySelectorAll('.polaroid')) {
+    const y = el.getBoundingClientRect().top - gal.getBoundingClientRect().top + gal.scrollTop;
+    gal.scrollTo({ top: Math.max(0, y - innerHeight * .2), behavior: 'smooth' });
+    el.classList.add('in');
+    await sleep(1700);
+  }
+  gal.scrollTo({ top: gal.scrollHeight, behavior: 'smooth' });
+  gal.querySelector('.gal-end').classList.add('in');
+  await sleep(1600);
+  gal.style.overflowY = 'auto';      /* now she can scroll freely */
 });
+
+$('mute').addEventListener('click', () => { const song = $('song'); if (song.paused) song.play(); else song.pause(); });
+['play', 'pause'].forEach(ev => $('song').addEventListener(ev, () => {
+  const playing = !$('song').paused;
+  $('icPause').style.display = playing ? '' : 'none'; $('icPlay').style.display = playing ? 'none' : '';
+  $('mute').setAttribute('aria-label', playing ? 'Pause music' : 'Play music');
+}));
 
 let celebrated = false;
 async function celebrate(){
